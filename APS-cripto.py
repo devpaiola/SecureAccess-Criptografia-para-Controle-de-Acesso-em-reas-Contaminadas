@@ -1,3 +1,6 @@
+import tkinter as tk
+from tkinter import messagebox
+
 # Funções de Criptografia
 def criptografar_deslocamento(key):
     mensagem = ""
@@ -19,87 +22,79 @@ def xor_cipher(mensagem, chave):
 
 def validar_chave(chave):
     if len(chave) < 12:
-        print("Erro: A chave deve ter no mínimo 12 caracteres!")
+        messagebox.showerror("Erro", "A chave deve ter no mínimo 12 caracteres!")
         return False
     return True
 
-# Interface principal do sistema
-while True:
-    print("\nBem-vindo ao Sistema de Controle de Acesso Sustentável!\n")
-    print("Contexto: Um navio que transportava lixo tóxico da Ásia foi apreendido. Apenas inspetores autorizados com")
-    print("equipamento de proteção adequado podem acessar áreas contaminadas do navio.")
-    print("\nPara garantir a segurança, será necessário criptografar a senha de acesso.")
-    
-    print("\nEscolha o método de criptografia para proteger as credenciais:")
-    print("1 - Cifra de Deslocamento (+5)")
-    print("2 - XOR Cipher")
-    metodo = input("Digite o número do método desejado: ")
+# Funções para o UI
+def executar_criptografia():
+    metodo = metodo_var.get()
+    acao = acao_var.get()
+    chave = entrada_chave.get()
+    texto = entrada_texto.get()
 
-    print("\nEscolha a ação que deseja realizar:")
-    print("1 - Criptografar")
-    print("2 - Descriptografar")
-    case = input("Digite o número da ação desejada: ")
+    if not validar_chave(chave):
+        return
 
-    if metodo == "1":
-        chave = input("Entre com uma chave de segurança (mínimo 12 caracteres): ")
-        if not validar_chave(chave):
-            continue 
+    if metodo == "deslocamento":
+        if acao == "criptografar":
+            resultado = criptografar_deslocamento(texto)
+            salvar_arquivo("senha_criptografada_deslocamento.txt", texto, chave, resultado)
+            messagebox.showinfo("Resultado", f"Senha criptografada: {resultado}")
+        elif acao == "descriptografar":
+            resultado = descriptografar_deslocamento(texto)
+            salvar_arquivo("senha_descriptografada_deslocamento.txt", texto, chave, resultado)
+            messagebox.showinfo("Resultado", f"Senha descriptografada: {resultado}")
 
-        if case == "1":
-            text = input("\nInspetor, insira sua senha para criptografar o acesso: ")
-            text_encriptaded = criptografar_deslocamento(text)
-            print("\nSenha criptografada: ", text_encriptaded)
+    elif metodo == "xor":
+        if acao == "criptografar":
+            resultado = xor_cipher(texto, chave)
+            resultado_str = ', '.join(map(str, resultado))
+            salvar_arquivo("senha_criptografada_xor.txt", texto, chave, resultado_str)
+            messagebox.showinfo("Resultado", f"Senha criptografada (decimais): {resultado_str}")
+        elif acao == "descriptografar":
+            try:
+                valores_decimais = list(map(int, texto.split(',')))
+                resultado = "".join(chr(val ^ ord(chave[i % len(chave)])) for i, val in enumerate(valores_decimais))
+                salvar_arquivo("senha_descriptografada_xor.txt", texto, chave, resultado)
+                messagebox.showinfo("Resultado", f"Senha descriptografada: {resultado}")
+            except ValueError:
+                messagebox.showerror("Erro", "Formato inválido! Digite os valores decimais separados por vírgulas.")
 
-            with open("senha_criptografada_deslocamento.txt", "w") as file:
-                file.write(f"Senha original: {text}\n")
-                file.write(f"Chave de segurança: {chave}\n")
-                file.write(f"Senha criptografada: {text_encriptaded}\n")
-            print("Senha criptografada armazenada no arquivo 'senha_criptografada_deslocamento.txt'.")
+def salvar_arquivo(nome_arquivo, original, chave, resultado):
+    with open(nome_arquivo, "w") as file:
+        file.write(f"Senha original: {original}\n")
+        file.write(f"Chave de segurança: {chave}\n")
+        file.write(f"Resultado: {resultado}\n")
+    messagebox.showinfo("Salvo", f"Resultado salvo no arquivo '{nome_arquivo}'.")
 
-        elif case == "2":
-            text = input("\nInspetor, insira a senha criptografada para descriptografar: ")
-            text_descriptaded = descriptografar_deslocamento(text)
-            print("\nSenha descriptografada: ", text_descriptaded)
+# Interface Tkinter
+root = tk.Tk()
+root.title("Sistema de Controle de Acesso Sustentável")
+root.geometry("400x300")
 
-            with open("senha_descriptografada_deslocamento.txt", "w") as file:
-                file.write(f"Senha criptografada: {text}\n")
-                file.write(f"Chave de segurança: {chave}\n")
-                file.write(f"Senha descriptografada: {text_descriptaded}\n")
-            print("Senha descriptografada armazenada no arquivo 'senha_descriptografada_deslocamento.txt'.")
+# Labels e Entradas
+tk.Label(root, text="Chave de Segurança (mínimo 12 caracteres):").pack(pady=5)
+entrada_chave = tk.Entry(root, width=30)
+entrada_chave.pack(pady=5)
 
-    elif metodo == "2":
-        chave = input("Entre com uma chave de segurança (mínimo 12 caracteres): ")
-        if not validar_chave(chave):
-            continue 
+tk.Label(root, text="Texto (Senha):").pack(pady=5)
+entrada_texto = tk.Entry(root, width=30)
+entrada_texto.pack(pady=5)
 
-        if case == "1":
-            text = input("\nInspetor, insira sua senha para criptografar o acesso: ")
-            text_encriptaded = xor_cipher(text, chave)
-            print("\nSenha criptografada (valores decimais): ", text_encriptaded)
+# Opções de Método e Ação
+metodo_var = tk.StringVar(value="deslocamento")
+acao_var = tk.StringVar(value="criptografar")
 
-            with open("senha_criptografada_xor.txt", "w") as file:
-                file.write(f"Senha original: {text}\n")
-                file.write(f"Chave de segurança: {chave}\n")
-                file.write(f"Senha criptografada (valores decimais): {text_encriptaded}\n")
-            print("Senha criptografada armazenada no arquivo 'senha_criptografada_xor.txt'.")
+tk.Label(root, text="Método de Criptografia:").pack(pady=5)
+tk.Radiobutton(root, text="Cifra de Deslocamento (+5)", variable=metodo_var, value="deslocamento").pack()
+tk.Radiobutton(root, text="XOR Cipher", variable=metodo_var, value="xor").pack()
 
-        elif case == "2":
-            text = input("\nInspetor, insira os valores decimais da senha criptografada, separados por espaço: ")
-            valores_decimais = list(map(int, text.replace(',', '').split()))
-            chave = input("Entre com a chave de segurança utilizada na criptografia: ")
-            text_descriptaded = "".join(chr(val ^ ord(chave[i % len(chave)])) for i, val in enumerate(valores_decimais))
-            print("\nSenha descriptografada: ", text_descriptaded)
+tk.Label(root, text="Ação:").pack(pady=5)
+tk.Radiobutton(root, text="Criptografar", variable=acao_var, value="criptografar").pack()
+tk.Radiobutton(root, text="Descriptografar", variable=acao_var, value="descriptografar").pack()
 
-            with open("senha_descriptografada_xor.txt", "w") as file:
-                file.write(f"Senha criptografada (valores decimais): {valores_decimais}\n")
-                file.write(f"Chave de segurança: {chave}\n")
-                file.write(f"Senha descriptografada: {text_descriptaded}\n")
-            print("Senha descriptografada armazenada no arquivo 'senha_descriptografada_xor.txt'.")
+# Botão Executar
+tk.Button(root, text="Executar", command=executar_criptografia).pack(pady=20)
 
-    else:
-        print("\nOpção inválida! Por favor, tente novamente.")
-
-    opcao = input("\nDigite 0 para sair ou 1 para voltar ao início: ")
-    if opcao == "0":
-        print("\nSaindo do sistema de controle de acesso sustentável... Até mais!")
-        break
+root.mainloop()
